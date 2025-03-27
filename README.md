@@ -1,6 +1,6 @@
 # HaskHell
 >
-> A DOOM-inspired 2d game written in Haskell
+> A 2d-game written in Haskell
 
 ```
  _   _  ___  _____ _   ___   _ _____ _     _     
@@ -14,3 +14,10 @@
 ## Features
 
 ## How to play
+### Prebuilt release
+### Build from source
+```bash
+git clone git@github.com:tordjoha/HaskHell.git
+cd HaskHell
+stack build
+stack run

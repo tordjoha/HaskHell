@@ -1,10 +1,10 @@
 name:                haskhell
 version:             0.1.0.0
-github:              "githubuser/haskhell"
+github:              "tordjoha/HaskHell"
 license:             BSD-3-Clause
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2025 Author name here"
+author:              "Tord Johansson"
+maintainer:          "tordjoha1@gmail.com"
+copyright:           "2025 Tord Johansson"
 
 extra-source-files:
 - README.md
@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- gloss
 
 ghc-options:
 - -Wall
