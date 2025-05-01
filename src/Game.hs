@@ -68,37 +68,46 @@ selectMenuOption gs = gs
 -- PLAYER NAVIGATION
 --moveUp :: GameState -> GameState
 --moveUp gameState@GameState{playerPosition = (x, y)} =
---    gameState { playerPosition = (x, y + 5) }  -- Move up by 10 units
+--    gameState { playerPosition = (x, y + 5) }  -- Move up
 
 --moveDown :: GameState -> GameState
 --moveDown gameState@GameState{playerPosition = (x, y)} =
---    gameState { playerPosition = (x, y - 5) }  -- Move down by 10 units
+--    gameState { playerPosition = (x, y - 5) }  -- Move down
 
 moveLeft :: GameState -> GameState
 moveLeft gameState@GameState{playerPosition = (x, y)} =
-    gameState { playerPosition = (x - 5, y) }  -- Move left by 10 units
+    gameState { playerPosition = (x - 3, y) }  -- Move left
 
 moveRight :: GameState -> GameState
 moveRight gameState@GameState{playerPosition = (x, y)} =
-    gameState { playerPosition = (x + 5, y) }  -- Move right by 10 units
+    gameState { playerPosition = (x + 3, y) }  -- Move right
 
+-- Colors
 armyGreen :: Color
 armyGreen = makeColorI 78 91 49 255
 
+groundColor :: Color
+groundColor = makeColorI 107 68 35 255
+
 drawPlayer :: (Float, Float) -> Picture
 drawPlayer (x, y) = pictures
-    [ translate x y $ color armyGreen (rectangleSolid 25 25)  -- Main rectangle (body)
-    , translate (x) (y + 25) $ color white (circleSolid 13)  -- Head
+    [ translate x y $ color armyGreen (rectangleSolid 25 25)  -- Body
+    , translate (x) (y + 25) $ color armyGreen (circleSolid 14)  -- Helmet
+    , translate (x) (y + 25) $ color white (circleSolid 9)  -- Head
     , translate (x - 15) (y+2) $ color black (rectangleSolid 7 20)  -- Left arm
     , translate (x + 15) (y+2) $ color black (rectangleSolid 7 20)  -- Right arm
     , translate (x - 8) (y - 20) $ color armyGreen (rectangleSolid 8 20)  -- Left leg
     , translate (x + 8) (y - 20) $ color armyGreen (rectangleSolid 8 20)  -- Right leg
     ]
 
+drawElapsedTime :: Float -> Picture
+drawElapsedTime time = translate (-80) 300 $ scale 0.2 0.2 $ color white $ text ("Time: " ++ show (floor time) ++ "s")
+
 renderState :: Float -> GameState -> Picture
-renderState screenHeight GameState{currentScene = PlayScene, playerPosition = (x, y)} = pictures
-    [ color (makeColorI 128 79 0 255) $ translate 0 (-screenHeight / 2 + 50) $ rectangleSolid 5000 300  -- Platform
-    , drawPlayer(x, y)-- translate x y $ color armyGreen (rectangleSolid 50 50)
+renderState screenHeight GameState{currentScene = PlayScene, playerPosition = (x, y), elapsedTime = elapsed} = pictures
+    [ color groundColor $ translate 0 (-screenHeight / 2 + 50) $ rectangleSolid 5000 300  -- Platform
+    , drawPlayer(x, y)
+    , drawElapsedTime elapsed
     ]
 renderState _ GameState{currentScene = MenuScene item} = pictures
     [ translate 0 150 $ color white $ scale 0.5 0.5 $ text "HaskHell"
@@ -115,20 +124,22 @@ renderState _ GameState{currentScene = MenuScene item} = pictures
 --renderState _ = blank
 
 update :: Float -> GameState -> GameState
-update _ state = foldr applyMovement state (keyStates state)
+update dt state@GameState{currentScene = PlayScene} =
+    foldr applyMovement state { elapsedTime = elapsedTime state + dt } (keyStates state)
   where
     applyMovement :: SpecialKey -> GameState -> GameState
     -- applyMovement KeyUp = moveUp
-    --applyMovement KeyDown = moveDown
+    -- applyMovement KeyDown = moveDown
     applyMovement KeyLeft = moveLeft
     applyMovement KeyRight = moveRight
     applyMovement _ = id
+update _ state = state  -- No changes for other scenes
 
 gameLoop :: IO ()
 gameLoop = do
     let screenHeight = 1080  -- Replace with the actual screen height
     play FullScreen 
-        (makeColorI 135 206 235 255) -- background
+        (makeColorI 59 10 10 255) -- background
         60 -- FPS
         initialGameState
         (renderState screenHeight) -- Render state with screen height
