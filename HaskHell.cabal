@@ -73,6 +73,7 @@ library
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.19.0.0,
                       gloss,
+                      gloss-juicy,
                       mtl,
 
     -- Directories containing source files.
