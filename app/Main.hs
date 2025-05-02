@@ -4,5 +4,5 @@ import qualified Game (gameLoop)
 
 main :: IO ()
 main = do
-  putStrLn "Hello, Haskell!"
+  putStrLn "Starting game..."
   Game.gameLoop

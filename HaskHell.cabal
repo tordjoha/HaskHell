@@ -75,6 +75,7 @@ library
                       gloss,
                       gloss-juicy,
                       mtl,
+                      containers,
 
     -- Directories containing source files.
     hs-source-dirs:   src

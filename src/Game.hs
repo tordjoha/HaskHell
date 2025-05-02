@@ -3,6 +3,7 @@ module Game (gameLoop) where
 import Control.Monad.State
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
+import qualified Data.Map as Map
 
 data Key = Special SpecialKey | Char Char
     deriving (Show, Eq)
@@ -14,6 +15,7 @@ data GameState = GameState
     , playerPosition :: (Float, Float)
     , enemyPositions :: [(Float, Float)] -- List of enemies positions
     , keyStates :: [SpecialKey]
+    , assets :: Map.Map String Picture -- Stores all image assets
     } deriving Show
 
 data Scene
@@ -38,6 +40,7 @@ initialGameState = GameState
     , playerPosition = (0, -310)
     , enemyPositions = []
     , keyStates = []
+    , assets = Map.empty
     }
 
 updateGame :: Event -> GameMonad ()
@@ -127,9 +130,10 @@ drawElapsedTime :: Float -> Picture
 drawElapsedTime time = translate (-80) 300 $ scale 0.2 0.2 $ color white $ text ("Time: " ++ show (floor time) ++ "s")
 
 renderState :: Float -> GameState -> Picture
-renderState screenHeight GameState{currentScene = PlayScene, playerPosition = (x, y), enemyPositions = enemies, elapsedTime = elapsed} = pictures
+renderState screenHeight GameState{currentScene = PlayScene, playerPosition = (x, y), enemyPositions = enemies, elapsedTime = elapsed, assets = assets} = pictures
     [ color groundColor $ translate 0 (-screenHeight / 2 + 50) $ rectangleSolid 5000 300  -- Platform
     , drawPlayer(x, y)
+    , translate 0 0 $ scale 0.3 0.3 (maybe Blank id (Map.lookup "monster" assets))
     --, drawEnemy(0, 0)
     , pictures (map drawEnemy enemies) -- Draw enemies
     , drawElapsedTime elapsed
@@ -170,10 +174,16 @@ update _ state = state  -- No changes for other scenes
 gameLoop :: IO ()
 gameLoop = do
     let screenHeight = 1080
+    monster <- loadBMP "./assets/baron.bmp"
+    let imageMap = Map.fromList
+            [ ("monster", monster)
+            ]
+
     play FullScreen 
-        (makeColorI 59 10 10 255) -- background
+        --(makeColorI 59 10 10 255) -- background
+        black -- background
         60 -- FPS
-        initialGameState
+        initialGameState { assets = imageMap}
         (renderState screenHeight) -- Render state with screen height
         (\e s -> execState (updateGame e) s) -- Handle input
         update -- Updates state per frame
