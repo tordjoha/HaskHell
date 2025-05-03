@@ -8,7 +8,7 @@ import qualified Data.Map as Map
 
 import Types (GameState(..), Scene(..), MenuOption(..), Key(..), GameMonad)
 import Menu (selectMenuOption, navigateMenuUp, navigateMenuDown)
-import Player (moveLeft, moveRight)
+import Player (moveLeft, moveRight, shootProjectile)
 import Enemy (moveEnemyTowards)
 import Colors (armyGreen, groundColor)
 import Rendering (drawElapsedTime, renderState)
@@ -19,10 +19,11 @@ initialGameState = GameState
       --currentScene = PlayScene
     , playerScore = 0
     , elapsedTime = 0
-    , playerPosition = (0, -310)
+    , playerPosition = (0, -290)
     , enemyPositions = []
     , keyStates = []
     , assets = Map.empty
+    , projectiles = []
     }
 
 handleGameInput :: Event -> GameMonad ()
@@ -45,29 +46,41 @@ handleGameInput (EventKey (SpecialKey key) Up _ _) = do
     state <- get
     modify $ \s -> s { keyStates = filter (/= key) (keyStates s) }
 handleGameInput _ = return ()
+
 updateGameState :: Float -> GameState -> GameState
-updateGameState dt state@GameState{currentScene = PlayScene, enemyPositions = enemies, playerPosition = playerPos@(px, py)} =
-    let updatedState = foldr applyMovement state { elapsedTime = elapsedTime state + dt } (keyStates state)
-        spawnInterval = 5  -- seconds
+updateGameState dt state@GameState{currentScene = PlayScene, enemyPositions = enemies, playerPosition = playerPos@(px, py), projectiles = ps} =
+    let 
+        playerMovementState = foldr applyMovementKeys state { elapsedTime = elapsedTime state + dt } (keyStates state) 
+        updatedState = if KeyTab `elem` keyStates state
+                      then shootProjectile playerMovementState
+                      else playerMovementState
+        movedProjectiles = [(x + 10, y) | (x, y) <- projectiles updatedState]
+        spawnInterval = 5
         newElapsed = elapsedTime updatedState
-        --spawnPosition = (px + 300, py)  -- Spawn enemy 300 units to the right of player
         spawnPosition = (900, -310)
         newEnemies = if floor newElapsed `mod` spawnInterval == 0
-                     then enemies ++ [spawnPosition]  -- Add new enemy at spawn position
+                     then enemies ++ [spawnPosition]
                      else enemies
         movedEnemies = map (moveEnemyTowards playerPos) newEnemies
-    in updatedState { enemyPositions = movedEnemies }
+    in updatedState { enemyPositions = movedEnemies, projectiles = movedProjectiles }
   where
-    applyMovement :: SpecialKey -> GameState -> GameState
-    applyMovement KeyLeft = moveLeft
-    applyMovement KeyRight = moveRight
-    applyMovement _ = id
+    applyMovementKeys :: SpecialKey -> GameState -> GameState
+    applyMovementKeys KeyLeft = moveLeft
+    applyMovementKeys KeyRight = moveRight
+    applyMovementKeys _ = id
 updateGameState _ state = state  -- No changes for other scenes
 
 gameLoop :: IO ()
 gameLoop = do
     let screenHeight = 1080
-    let assetFiles = [("monster", "./assets/baron.bmp"), ("player", "./assets/player.bmp")]
+    let assetFiles =    [("monster", "./assets/baron.bmp")
+                        ,("player", "./assets/player.bmp")
+                        ,("stone_tile", "./assets/stone_tile.bmp")
+                        ,("ground_top", "./assets/ground_top.bmp")
+                        ,("ground", "./assets/ground.bmp")
+                        ,("bullet", "./assets/bullet.bmp")
+                        ]
+    
     assets <- mapM (\(name, path) -> fmap (name,) (loadBMP path)) assetFiles
     let imageMap = Map.fromList assets
 
