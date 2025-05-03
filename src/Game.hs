@@ -1,6 +1,7 @@
 module Game (gameLoop) where
 
 import Control.Monad.State
+import Control.Monad (when)
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import qualified Data.Map as Map
@@ -14,8 +15,8 @@ import Rendering (drawElapsedTime, renderState)
 
 initialGameState :: GameState
 initialGameState = GameState
-    { --currentScene = MenuScene Play -- ADD THIS BACK FOR SHOWING MENU. have to FIX keyboard input
-      currentScene = PlayScene
+    { currentScene = MenuScene Play -- ADD THIS BACK FOR SHOWING MENU
+      --currentScene = PlayScene
     , playerScore = 0
     , elapsedTime = 0
     , playerPosition = (0, -310)
@@ -25,6 +26,18 @@ initialGameState = GameState
     }
 
 handleGameInput :: Event -> GameMonad ()
+handleGameInput (EventKey (SpecialKey KeyUp) Down _ _) = do
+    state <- get
+    when (currentScene state == MenuScene Play || currentScene state == MenuScene Exit) $
+        modify navigateMenuUp
+handleGameInput (EventKey (SpecialKey KeyDown) Down _ _) = do
+    state <- get
+    when (currentScene state == MenuScene Play || currentScene state == MenuScene Exit) $
+        modify navigateMenuDown
+handleGameInput (EventKey (SpecialKey KeyEnter) Down _ _) = do
+    state <- get
+    when (currentScene state == MenuScene Play || currentScene state == MenuScene Exit) $
+        modify selectMenuOption
 handleGameInput (EventKey (SpecialKey key) Down _ _) = do
     state <- get
     modify $ \s -> s { keyStates = key : keyStates s }
@@ -32,7 +45,6 @@ handleGameInput (EventKey (SpecialKey key) Up _ _) = do
     state <- get
     modify $ \s -> s { keyStates = filter (/= key) (keyStates s) }
 handleGameInput _ = return ()
-
 updateGameState :: Float -> GameState -> GameState
 updateGameState dt state@GameState{currentScene = PlayScene, enemyPositions = enemies, playerPosition = playerPos@(px, py)} =
     let updatedState = foldr applyMovement state { elapsedTime = elapsedTime state + dt } (keyStates state)
