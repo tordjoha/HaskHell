@@ -27,7 +27,10 @@ repeatTextureHorizontal (Just pic) = pictures [translate (fromIntegral x * adjus
     cols = floor (screenWidth / (adjustedTileSize * 2))
   
 drawElapsedTime :: Float -> Picture
-drawElapsedTime time = translate (-80) 300 $ scale 0.2 0.2 $ color white $ text ("Time: " ++ show (floor time) ++ "s")
+drawElapsedTime time = pictures 
+  [ translate (-80) 300 $ scale 0.3 0.3 $ color white $ text "Time: "
+  , translate 30 300 $ scale 0.3 0.3 $ color red $ text (show (floor time) ++ "s")
+  ]
 
 renderState :: Float -> GameState -> Picture
 renderState screenHeight GameState{currentScene = PlayScene, playerPosition = (x, y), enemyPositions = enemies, elapsedTime = elapsed, assets = assets, projectiles = ps} = pictures
@@ -35,8 +38,10 @@ renderState screenHeight GameState{currentScene = PlayScene, playerPosition = (x
     , maybe Blank id (fmap (translate 0 (-screenHeight / 2 + 110) . repeatTextureHorizontal . Just) (Map.lookup "ground" assets)) -- Platform rest
     , maybe Blank id (fmap (translate 0 (-screenHeight / 2 + 52) . repeatTextureHorizontal . Just) (Map.lookup "ground" assets)) -- Platform rest
     , translate x y $ scale 0.3 0.3 (maybe Blank id (Map.lookup "player" assets))
-    , pictures (map (\(ex, ey) -> translate ex ey $ scale 0.2 0.2 (maybe Blank id (Map.lookup "monster" assets))) enemies) -- Draw enemies as monsters
-    , pictures [translate px (py + 10) $ scale 0.1 0.1 (maybe Blank id (Map.lookup "bullet" assets)) | (px, py) <- ps] -- Draw projectiles as bullets
+    , pictures (map (\(ex, ey) -> translate ex (ey + 30) $ scale 0.2 0.2 (maybe Blank id (Map.lookup "monster" assets))) enemies) -- Draw enemies as monsters
+    , pictures [translate (px + 15) (py + 16) $ scale 0.1 0.1 (maybe Blank id (Map.lookup "bullet" assets)) | (px, py) <- ps] -- Draw projectiles as bullets
+    , translate (-600) (screenHeight / 2 - 260) $ scale 0.2 0.2 $ color white $ text "Move: Left Arrow / Right Arrow"
+    , translate (-600) (screenHeight / 2 - 300) $ scale 0.2 0.2 $ color white $ text "Shoot: Press Tab"
     , drawElapsedTime elapsed
     ]
 renderState _ GameState{currentScene = MenuScene item, assets = assets} = pictures
