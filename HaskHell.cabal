@@ -24,7 +24,7 @@ library
     other-modules:  Enemy
                     Colors
                     Types
-                    --Menu
+                    Menu
     
     build-depends:    base ^>=4.19.0.0,
                       gloss,

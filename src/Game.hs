@@ -6,9 +6,9 @@ import Graphics.Gloss.Interface.IO.Game
 import qualified Data.Map as Map
 
 import Types (GameState(..), Scene(..), MenuOption(..), Key(..), GameMonad)
+import Menu (selectMenuOption, navigateMenuUp, navigateMenuDown)
 import Enemy (moveEnemyTowards)
 import Colors (armyGreen, groundColor)
-
 
 initialGameState :: GameState
 initialGameState = GameState
@@ -30,23 +30,6 @@ updateGame (EventKey (SpecialKey key) Up _ _) = do
     state <- get
     modify $ \s -> s { keyStates = filter (/= key) (keyStates s) }
 updateGame _ = return ()
-
-navigateMenuUp :: GameState -> GameState
-navigateMenuUp gs@GameState{currentScene = MenuScene _} = 
-    gs { currentScene = MenuScene Play }
-navigateMenuUp gs = gs
-
-navigateMenuDown :: GameState -> GameState
-navigateMenuDown gs@GameState{currentScene = MenuScene _} = 
-    gs { currentScene = MenuScene Exit }
-navigateMenuDown gs = gs
-
-selectMenuOption :: GameState -> GameState
-selectMenuOption gs@GameState{currentScene = MenuScene Play} = 
-    gs { currentScene = PlayScene }
-selectMenuOption gs@GameState{currentScene = MenuScene Exit} = 
-    error "Exit game"
-selectMenuOption gs = gs
 
 moveLeft :: GameState -> GameState
 moveLeft gameState@GameState{playerPosition = (x, y)} =
@@ -79,7 +62,7 @@ update dt state@GameState{currentScene = PlayScene, enemyPositions = enemies, pl
     let updatedState = foldr applyMovement state { elapsedTime = elapsedTime state + dt } (keyStates state)
         spawnInterval = 5  -- seconds
         newElapsed = elapsedTime updatedState
-        --spawnPosition = (px + 300, py)  -- Spawn enemy 300 units to the right of the player
+        --spawnPosition = (px + 300, py)  -- Spawn enemy 300 units to the right of player
         spawnPosition = (900, -310)
         newEnemies = if floor newElapsed `mod` spawnInterval == 0
                      then enemies ++ [spawnPosition]  -- Add new enemy at spawn position
@@ -96,15 +79,11 @@ update _ state = state  -- No changes for other scenes
 gameLoop :: IO ()
 gameLoop = do
     let screenHeight = 1080
-    monster <- loadBMP "./assets/baron.bmp"
-    player <- loadBMP "./assets/player.bmp"
-    let imageMap = Map.fromList
-            [ ("monster", monster)
-            , ("player", player)
-            ]
+    let assetFiles = [("monster", "./assets/baron.bmp"), ("player", "./assets/player.bmp")]
+    assets <- mapM (\(name, path) -> fmap (name,) (loadBMP path)) assetFiles
+    let imageMap = Map.fromList assets
 
     play FullScreen 
-        --(makeColorI 59 10 10 255) -- background
         black -- background
         60 -- FPS
         initialGameState { assets = imageMap}
