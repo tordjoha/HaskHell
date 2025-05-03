@@ -25,6 +25,7 @@ library
                     Colors
                     Types
                     Menu
+                    Player
     
     build-depends:    base ^>=4.19.0.0,
                       gloss,

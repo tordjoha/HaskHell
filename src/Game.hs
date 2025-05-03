@@ -7,6 +7,7 @@ import qualified Data.Map as Map
 
 import Types (GameState(..), Scene(..), MenuOption(..), Key(..), GameMonad)
 import Menu (selectMenuOption, navigateMenuUp, navigateMenuDown)
+import Player (moveLeft, moveRight)
 import Enemy (moveEnemyTowards)
 import Colors (armyGreen, groundColor)
 
@@ -30,14 +31,6 @@ updateGame (EventKey (SpecialKey key) Up _ _) = do
     state <- get
     modify $ \s -> s { keyStates = filter (/= key) (keyStates s) }
 updateGame _ = return ()
-
-moveLeft :: GameState -> GameState
-moveLeft gameState@GameState{playerPosition = (x, y)} =
-    gameState { playerPosition = (x - 3, y) }  -- Move left
-
-moveRight :: GameState -> GameState
-moveRight gameState@GameState{playerPosition = (x, y)} =
-    gameState { playerPosition = (x + 3, y) }  -- Move right
 
 drawElapsedTime :: Float -> Picture
 drawElapsedTime time = translate (-80) 300 $ scale 0.2 0.2 $ color white $ text ("Time: " ++ show (floor time) ++ "s")
