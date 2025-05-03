@@ -24,17 +24,17 @@ initialGameState = GameState
     , assets = Map.empty
     }
 
-updateGame :: Event -> GameMonad ()
-updateGame (EventKey (SpecialKey key) Down _ _) = do
+handleGameInput :: Event -> GameMonad ()
+handleGameInput (EventKey (SpecialKey key) Down _ _) = do
     state <- get
     modify $ \s -> s { keyStates = key : keyStates s }
-updateGame (EventKey (SpecialKey key) Up _ _) = do
+handleGameInput (EventKey (SpecialKey key) Up _ _) = do
     state <- get
     modify $ \s -> s { keyStates = filter (/= key) (keyStates s) }
-updateGame _ = return ()
+handleGameInput _ = return ()
 
-update :: Float -> GameState -> GameState
-update dt state@GameState{currentScene = PlayScene, enemyPositions = enemies, playerPosition = playerPos@(px, py)} =
+updateGameState :: Float -> GameState -> GameState
+updateGameState dt state@GameState{currentScene = PlayScene, enemyPositions = enemies, playerPosition = playerPos@(px, py)} =
     let updatedState = foldr applyMovement state { elapsedTime = elapsedTime state + dt } (keyStates state)
         spawnInterval = 5  -- seconds
         newElapsed = elapsedTime updatedState
@@ -50,7 +50,7 @@ update dt state@GameState{currentScene = PlayScene, enemyPositions = enemies, pl
     applyMovement KeyLeft = moveLeft
     applyMovement KeyRight = moveRight
     applyMovement _ = id
-update _ state = state  -- No changes for other scenes
+updateGameState _ state = state  -- No changes for other scenes
 
 gameLoop :: IO ()
 gameLoop = do
@@ -64,5 +64,5 @@ gameLoop = do
         60 -- FPS
         initialGameState { assets = imageMap}
         (renderState screenHeight) -- Render state with screen height
-        (\e s -> execState (updateGame e) s) -- Handle input
-        update -- Updates state per frame
+        (\e s -> execState (handleGameInput e) s) -- Handle input
+        updateGameState -- Updates state per frame
