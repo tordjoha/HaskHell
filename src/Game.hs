@@ -53,9 +53,10 @@ updateGameState :: Float -> GameState -> GameState
 updateGameState dt state@GameState{currentScene = PlayScene, enemyPositions = enemies, playerPosition = playerPos@(px, py), projectiles = ps} =
     let 
         playerMovementState = foldr applyMovementKeys state { elapsedTime = elapsedTime state + dt } (keyStates state) 
-        updatedState = if KeyTab `elem` keyStates state
-                      then shootProjectile playerMovementState
-                      else playerMovementState
+        canShoot = KeyTab `elem` keyStates state && not (lastShotFired state)
+        updatedState = if canShoot
+                      then shootProjectile playerMovementState { lastShotFired = True }
+                      else playerMovementState { lastShotFired = KeyTab `elem` keyStates state }
         movedProjectiles = [(x + 10, y) | (x, y) <- projectiles updatedState]
         spawnInterval = 5
         newElapsed = elapsedTime updatedState

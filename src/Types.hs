@@ -17,6 +17,7 @@ data GameState = GameState
     , keyStates :: [SpecialKey]
     , assets :: Map.Map String Picture 
     , projectiles :: [(Float, Float)]
+    , lastShotFired :: Bool
     } deriving Show
 
 data Scene
