@@ -103,7 +103,7 @@ gameLoop = do
     play FullScreen 
         black -- background color
         60 -- FPS
-        (initialGameState loadedAssets) -- Pass assets to initialGameState
+        (initialGameState loadedAssets) -- Initialize the game state
         (renderState screenHeight) -- Render the game state
         (\e s -> execState (handleGameInput e) s) -- Handle input
         updateGameState -- Update the game state per frame
