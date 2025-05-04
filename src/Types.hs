@@ -15,8 +15,8 @@ data GameState = GameState
     , playerPosition :: (Float, Float)
     , enemyPositions :: [(Float, Float)]
     , keyStates :: [SpecialKey]
-    , assets :: Map.Map String Picture -- Stores all image assets
-    , projectiles :: [(Float, Float)] -- Stores projectile positions
+    , assets :: Map.Map String Picture 
+    , projectiles :: [(Float, Float)]
     } deriving Show
 
 data Scene

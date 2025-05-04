@@ -64,15 +64,23 @@ updateGameState dt state@GameState{currentScene = PlayScene, enemyPositions = en
                      then enemies ++ [spawnPosition]
                      else enemies
         movedEnemies = map (moveEnemyTowards playerPos) newEnemies
-        collisionDetected = any (\(ex, ey) -> abs (px - ex) < 30 && abs (py - ey) < 30) movedEnemies
+        (remainingEnemies, remainingProjectiles) = resolveCollisions movedEnemies movedProjectiles
+        collisionDetected = any (\(ex, ey) -> abs (px - ex) < 30 && abs (py - ey) < 30) remainingEnemies
      in if collisionDetected
        then state { currentScene = GameOverScene }
-       else updatedState { enemyPositions = movedEnemies, projectiles = movedProjectiles }
+       else updatedState { enemyPositions = remainingEnemies, projectiles = remainingProjectiles }
   where
     applyMovementKeys :: SpecialKey -> GameState -> GameState
     applyMovementKeys KeyLeft = moveLeft
     applyMovementKeys KeyRight = moveRight
     applyMovementKeys _ = id
+
+    resolveCollisions :: [(Float, Float)] -> [(Float, Float)] -> ([(Float, Float)], [(Float, Float)])
+    resolveCollisions enemies bullets =
+        let isHit (ex, ey) = any (\(bx, by) -> abs (bx - ex) < 20 && abs (by - ey) < 20) bullets
+            remainingEnemies = filter (not . isHit) enemies
+            remainingBullets = filter (\(bx, by) -> not (any (\(ex, ey) -> abs (bx - ex) < 20 && abs (by - ey) < 20) enemies)) bullets
+        in (remainingEnemies, remainingBullets)
 updateGameState _ state = state  -- No changes for other scenes
 
 loadAssets :: IO (Map.Map String Picture)
