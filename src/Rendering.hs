@@ -1,7 +1,7 @@
 module Rendering (drawElapsedTime, renderState) where
 import Graphics.Gloss (Picture(..), color, translate, scale, text, rectangleSolid, pictures, white, red)
 import Types (GameState(..), Scene(..), MenuOption(..))
-import Colors (groundColor)
+import Colors (armyGreen, groundColor, blackTranslucent)
 import qualified Data.Map as Map
 
 tileBackground :: Maybe Picture -> Picture
@@ -33,6 +33,12 @@ drawElapsedTime time = pictures
   ]
 
 renderState :: Float -> GameState -> Picture
+renderState _ GameState{currentScene = GameOverScene} = pictures
+    [ color blackTranslucent $ rectangleSolid 800 600
+    , translate (-280) 50 $ color red $ scale 1 1 $ pictures [translate dx dy $ text "Game Over" | dx <- [-2, -1, 0, 1, 2], dy <- [-2, -1, 0, 1, 2]]
+    , translate (-250) (-50) $ color white $ scale 0.3 0.3 $ text "Press Enter to Play Again"
+    , translate (-250) (-150) $ color white $ scale 0.3 0.3 $ text "Press Esc to Exit"
+    ]
 renderState screenHeight GameState{currentScene = PlayScene, playerPosition = (x, y), enemyPositions = enemies, elapsedTime = elapsed, assets = assets, projectiles = ps} = pictures
     [ maybe Blank id (fmap (translate 0 (-screenHeight / 2 + 168) . repeatTextureHorizontal . Just) (Map.lookup "ground_top" assets)) -- Platformtop
     , maybe Blank id (fmap (translate 0 (-screenHeight / 2 + 110) . repeatTextureHorizontal . Just) (Map.lookup "ground" assets)) -- Platform rest

@@ -10,23 +10,29 @@ import Types (GameState(..), Scene(..), MenuOption(..), Key(..), GameMonad)
 import Menu (selectMenuOption, navigateMenuUp, navigateMenuDown)
 import Player (moveLeft, moveRight, shootProjectile)
 import Enemy (moveEnemyTowards)
-import Colors (armyGreen, groundColor)
+import Colors (armyGreen, groundColor, blackTranslucent)
 import Rendering (drawElapsedTime, renderState)
 
-initialGameState :: GameState
-initialGameState = GameState
-    { currentScene = MenuScene Play -- ADD THIS BACK FOR SHOWING MENU
-      --currentScene = PlayScene
+initialGameState :: Map.Map String Picture -> GameState
+initialGameState loadedAssets = GameState
+    { currentScene = MenuScene Play
     , playerScore = 0
     , elapsedTime = 0
     , playerPosition = (0, -290)
     , enemyPositions = []
     , keyStates = []
-    , assets = Map.empty
+    , assets = loadedAssets
     , projectiles = []
     }
 
 handleGameInput :: Event -> GameMonad ()
+handleGameInput (EventKey (SpecialKey KeyEnter) Down _ _) = do
+    state <- get
+    case currentScene state of
+        GameOverScene -> put (initialGameState (assets state)) { currentScene = PlayScene } -- Restart directly into PlayScene
+        MenuScene Play -> modify selectMenuOption
+        MenuScene Exit -> modify selectMenuOption
+        _ -> return ()
 handleGameInput (EventKey (SpecialKey KeyUp) Down _ _) = do
     state <- get
     when (currentScene state == MenuScene Play || currentScene state == MenuScene Exit) $
@@ -35,10 +41,6 @@ handleGameInput (EventKey (SpecialKey KeyDown) Down _ _) = do
     state <- get
     when (currentScene state == MenuScene Play || currentScene state == MenuScene Exit) $
         modify navigateMenuDown
-handleGameInput (EventKey (SpecialKey KeyEnter) Down _ _) = do
-    state <- get
-    when (currentScene state == MenuScene Play || currentScene state == MenuScene Exit) $
-        modify selectMenuOption
 handleGameInput (EventKey (SpecialKey key) Down _ _) = do
     state <- get
     modify $ \s -> s { keyStates = key : keyStates s }
@@ -62,7 +64,10 @@ updateGameState dt state@GameState{currentScene = PlayScene, enemyPositions = en
                      then enemies ++ [spawnPosition]
                      else enemies
         movedEnemies = map (moveEnemyTowards playerPos) newEnemies
-    in updatedState { enemyPositions = movedEnemies, projectiles = movedProjectiles }
+        collisionDetected = any (\(ex, ey) -> abs (px - ex) < 30 && abs (py - ey) < 30) movedEnemies
+     in if collisionDetected
+       then state { currentScene = GameOverScene }
+       else updatedState { enemyPositions = movedEnemies, projectiles = movedProjectiles }
   where
     applyMovementKeys :: SpecialKey -> GameState -> GameState
     applyMovementKeys KeyLeft = moveLeft
@@ -70,24 +75,26 @@ updateGameState dt state@GameState{currentScene = PlayScene, enemyPositions = en
     applyMovementKeys _ = id
 updateGameState _ state = state  -- No changes for other scenes
 
+loadAssets :: IO (Map.Map String Picture)
+loadAssets = do
+    let assetFiles = [("monster", "./assets/baron.bmp")
+                     ,("player", "./assets/player.bmp")
+                     ,("stone_tile", "./assets/stone_tile.bmp")
+                     ,("ground_top", "./assets/ground_top.bmp")
+                     ,("ground", "./assets/ground.bmp")
+                     ,("bullet", "./assets/bullet.bmp")
+                     ]
+    assets <- mapM (\(name, path) -> fmap (name,) (loadBMP path)) assetFiles
+    return $ Map.fromList assets
+
 gameLoop :: IO ()
 gameLoop = do
     let screenHeight = 1080
-    let assetFiles =    [("monster", "./assets/baron.bmp")
-                        ,("player", "./assets/player.bmp")
-                        ,("stone_tile", "./assets/stone_tile.bmp")
-                        ,("ground_top", "./assets/ground_top.bmp")
-                        ,("ground", "./assets/ground.bmp")
-                        ,("bullet", "./assets/bullet.bmp")
-                        ]
-    
-    assets <- mapM (\(name, path) -> fmap (name,) (loadBMP path)) assetFiles
-    let imageMap = Map.fromList assets
-
+    loadedAssets <- loadAssets -- Load assets
     play FullScreen 
-        black -- background
+        black -- background color
         60 -- FPS
-        initialGameState { assets = imageMap}
-        (renderState screenHeight) -- Render state with screen height
+        (initialGameState loadedAssets) -- Pass assets to initialGameState
+        (renderState screenHeight) -- Render the game state
         (\e s -> execState (handleGameInput e) s) -- Handle input
-        updateGameState -- Updates state per frame
+        updateGameState -- Update the game state per frame
